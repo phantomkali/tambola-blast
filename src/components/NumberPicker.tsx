@@ -1,7 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Dices, Play, Volume2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Dices, Play, Volume2, VolumeX, Settings } from 'lucide-react';
 
 interface NumberPickerProps {
   onNumberCalled: (number: number) => void;
@@ -17,6 +19,62 @@ export const NumberPicker: React.FC<NumberPickerProps> = ({
   isGameActive
 }) => {
   const [isPickingNumber, setIsPickingNumber] = useState(false);
+  const [speechEnabled, setSpeechEnabled] = useState(true);
+  const [speechRate, setSpeechRate] = useState([0.8]);
+  const [speechPitch, setSpeechPitch] = useState([1.2]);
+  const [speechVolume, setSpeechVolume] = useState([1]);
+  const [selectedVoice, setSelectedVoice] = useState<string>('');
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [showVoiceSettings, setShowVoiceSettings] = useState(false);
+
+  // Load available voices
+  useEffect(() => {
+    const loadVoices = () => {
+      const voices = speechSynthesis.getVoices();
+      setAvailableVoices(voices);
+      
+      // Try to find an English voice as default
+      const englishVoice = voices.find(voice => 
+        voice.lang.startsWith('en') && voice.localService
+      );
+      if (englishVoice && !selectedVoice) {
+        setSelectedVoice(englishVoice.name);
+      }
+    };
+
+    loadVoices();
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  }, [selectedVoice]);
+
+  const speakNumber = useCallback((number: number) => {
+    if (!speechEnabled || !('speechSynthesis' in window)) return;
+
+    // Stop any ongoing speech
+    speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(`Number ${number}`);
+    utterance.rate = speechRate[0];
+    utterance.pitch = speechPitch[0];
+    utterance.volume = speechVolume[0];
+
+    // Set voice if selected
+    if (selectedVoice) {
+      const voice = availableVoices.find(v => v.name === selectedVoice);
+      if (voice) {
+        utterance.voice = voice;
+      }
+    }
+
+    // Add some excitement for milestone numbers
+    if (number % 10 === 0 || number === 1 || number === 90) {
+      utterance.text = `Special number ${number}!`;
+      utterance.rate = speechRate[0] * 0.9; // Slightly slower for emphasis
+    }
+
+    speechSynthesis.speak(utterance);
+  }, [speechEnabled, speechRate, speechPitch, speechVolume, selectedVoice, availableVoices]);
 
   const availableNumbers = Array.from({ length: 90 }, (_, i) => i + 1)
     .filter(num => !calledNumbers.has(num));
@@ -33,16 +91,14 @@ export const NumberPicker: React.FC<NumberPickerProps> = ({
     const pickedNumber = availableNumbers[randomIndex];
     
     onNumberCalled(pickedNumber);
+    
+    // Speak the number after a short delay for better timing
+    setTimeout(() => {
+      speakNumber(pickedNumber);
+    }, 300);
+    
     setIsPickingNumber(false);
-
-    // Optional: Add sound effect here
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(`Number ${pickedNumber}`);
-      utterance.rate = 0.8;
-      utterance.pitch = 1.2;
-      speechSynthesis.speak(utterance);
-    }
-  }, [availableNumbers, isGameActive, onNumberCalled]);
+  }, [availableNumbers, isGameActive, onNumberCalled, speakNumber]);
 
   const gameProgress = ((90 - availableNumbers.length) / 90) * 100;
 
@@ -89,6 +145,133 @@ export const NumberPicker: React.FC<NumberPickerProps> = ({
             </>
           )}
         </Button>
+      </Card>
+
+      {/* Voice Settings */}
+      <Card className="p-4 shadow-card">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Voice Settings
+            </h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowVoiceSettings(!showVoiceSettings)}
+            >
+              {showVoiceSettings ? 'Hide' : 'Show'}
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant={speechEnabled ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSpeechEnabled(!speechEnabled)}
+              className="flex items-center gap-2"
+            >
+              {speechEnabled ? (
+                <>
+                  <Volume2 className="h-4 w-4" />
+                  Speech On
+                </>
+              ) : (
+                <>
+                  <VolumeX className="h-4 w-4" />
+                  Speech Off
+                </>
+              )}
+            </Button>
+            
+            {speechEnabled && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => speakNumber(Math.floor(Math.random() * 90) + 1)}
+                className="text-primary"
+              >
+                Test Voice
+              </Button>
+            )}
+          </div>
+
+          {showVoiceSettings && speechEnabled && (
+            <div className="space-y-4 pt-2 border-t">
+              {/* Voice Selection */}
+              {availableVoices.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Voice</label>
+                  <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a voice" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableVoices
+                        .filter(voice => voice.lang.startsWith('en'))
+                        .map((voice) => (
+                          <SelectItem key={voice.name} value={voice.name}>
+                            {voice.name} ({voice.lang})
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Speech Rate */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Speech Rate: {speechRate[0].toFixed(1)}x
+                </label>
+                <Slider
+                  value={speechRate}
+                  onValueChange={setSpeechRate}
+                  max={2}
+                  min={0.5}
+                  step={0.1}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Speech Pitch */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Speech Pitch: {speechPitch[0].toFixed(1)}
+                </label>
+                <Slider
+                  value={speechPitch}
+                  onValueChange={setSpeechPitch}
+                  max={2}
+                  min={0.5}
+                  step={0.1}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Speech Volume */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Volume: {Math.round(speechVolume[0] * 100)}%
+                </label>
+                <Slider
+                  value={speechVolume}
+                  onValueChange={setSpeechVolume}
+                  max={1}
+                  min={0}
+                  step={0.1}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          )}
+
+          {!('speechSynthesis' in window) && (
+            <div className="text-sm text-destructive bg-destructive/10 p-2 rounded">
+              ⚠️ Speech synthesis is not supported in this browser.
+            </div>
+          )}
+        </div>
       </Card>
 
       {/* Game Progress */}
