@@ -2,41 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Vibrant Tambola Game Design System */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Base colors */
+    --background: 220 15% 5%;
+    --foreground: 0 0% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Card colors */
+    --card: 220 13% 8%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    /* Popover colors */
+    --popover: 220 13% 8%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Vibrant purple */
+    --primary: 270 91% 65%;
+    --primary-foreground: 0 0% 98%;
+    --primary-glow: 270 91% 75%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary - Electric blue */
+    --secondary: 200 98% 60%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Accent - Bright green */
+    --accent: 142 76% 60%;
+    --accent-foreground: 220 15% 5%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Muted colors */
+    --muted: 220 13% 15%;
+    --muted-foreground: 220 9% 65%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Game specific colors */
+    --tambola-number: 45 93% 65%;
+    --tambola-number-foreground: 220 15% 5%;
+    --tambola-ticket: 0 0% 98%;
+    --tambola-ticket-foreground: 220 15% 5%;
+    --tambola-called: 0 84% 60%;
+    --tambola-winner: 120 100% 50%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
 
-    --radius: 0.5rem;
+    /* Borders and inputs */
+    --border: 220 13% 18%;
+    --input: 220 13% 18%;
+    --ring: 270 91% 65%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(270 91% 65%), hsl(270 91% 75%));
+    --gradient-secondary: linear-gradient(135deg, hsl(200 98% 60%), hsl(200 98% 70%));
+    --gradient-accent: linear-gradient(135deg, hsl(142 76% 60%), hsl(142 76% 70%));
+    --gradient-game: linear-gradient(135deg, hsl(220 15% 5%), hsl(220 13% 8%));
+    --gradient-ticket: linear-gradient(135deg, hsl(0 0% 98%), hsl(220 9% 92%));
+
+    /* Shadows */
+    --shadow-glow: 0 0 30px hsl(270 91% 65% / 0.3);
+    --shadow-number: 0 0 20px hsl(45 93% 65% / 0.4);
+    --shadow-card: 0 8px 32px hsl(220 15% 5% / 0.6);
+
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
 
@@ -100,6 +128,93 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground overflow-x-hidden;
+    background: var(--gradient-game);
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  /* Tambola specific animations */
+  .tambola-number-reveal {
+    @apply animate-[tambola-reveal_0.6s_ease-out_forwards];
+  }
+
+  .tambola-number-glow {
+    @apply animate-[tambola-glow_1s_ease-in-out_infinite];
+  }
+
+  .tambola-ticket-appear {
+    @apply animate-[ticket-appear_0.8s_ease-out_forwards];
+  }
+
+  .tambola-cell-mark {
+    @apply animate-[cell-mark_0.3s_ease-out_forwards];
+  }
+
+  .tambola-winner {
+    @apply animate-[winner-celebration_1s_ease-in-out_infinite];
+  }
+}
+
+@layer utilities {
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .gradient-secondary {
+    background: var(--gradient-secondary);
+  }
+
+  .gradient-accent {
+    background: var(--gradient-accent);
+  }
+
+  .gradient-ticket {
+    background: var(--gradient-ticket);
+  }
+
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .shadow-number {
+    box-shadow: var(--shadow-number);
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .text-tambola-number {
+    color: hsl(var(--tambola-number));
+  }
+
+  .bg-tambola-number {
+    background-color: hsl(var(--tambola-number));
+  }
+
+  .text-tambola-called {
+    color: hsl(var(--tambola-called));
+  }
+
+  .bg-tambola-called {
+    background-color: hsl(var(--tambola-called));
+  }
+
+  .text-tambola-winner {
+    color: hsl(var(--tambola-winner));
+  }
+
+  .bg-tambola-winner {
+    background-color: hsl(var(--tambola-winner));
+  }
+
+  .bg-tambola-ticket {
+    background-color: hsl(var(--tambola-ticket));
+  }
+
+  .text-tambola-ticket-foreground {
+    color: hsl(var(--tambola-ticket-foreground));
   }
 }
